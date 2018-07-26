@@ -5,13 +5,8 @@
 ###!/Library/Frameworks/Python.framework/Versions/Current/bin/python
 
 
-import string, sys, re, copy, os
-from numpy import *
-#from math import *
-from subprocess import call
 from phylo import *
 from methyl import *
-import scipy.stats as stats
 
 #exit(8)
 
@@ -113,7 +108,7 @@ def prepareData(infile, top_times, top_sites, crit):
         cols.pop(0)
 #        exit(8)
         try :
-            row = [ float(i) for i in cols]
+            row = [float(i) for i in cols]
         except ValueError:
             print "Invalid val was found at line ", cnt, "site ", sites[-1]
             discarded += 1
