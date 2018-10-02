@@ -334,8 +334,6 @@ def find_soln_man(table, times):
 def find_soln_direct (y, times, n_t, n_s):
 
     n_cols = 2 * n_s
-
-
     sumT = 0.
     sumTsqr = 0.
     for j in range(n_t):
@@ -529,7 +527,7 @@ def mhtn_1strt_pt_o (A, y, times, n_t, n_s, table):
 #--------------------------------------------------------------------------------------------#
 def PMEM (times, table, itr_limit):
 
-    print "In mhtn_1strt_pt"
+
     n_s = len(table)
     n_t  = len(table[0])
     y = [table[i][j]  for i in range(n_s) for j in range(n_t)]
@@ -573,7 +571,7 @@ def PMEM (times, table, itr_limit):
 #            print "sum2", sum2
         #    exit(8)
         for i in range(n_t):
-            sum2[i] = sum([ r_rates1[j] * table[j][i] for j in range(n_s)])
+            sum2[i] = sum([r_rates1[j] * table[j][i] for j in range(n_s)])
             times_n[i] = (sum2[i] - sum1)/ sum_r_sq1
 #            times_n[i] = max((sum2[i] - sum1)/ sum_r_sq1, 0)
 
@@ -588,10 +586,9 @@ def PMEM (times, table, itr_limit):
 #        print "%s_%s:%s: prev err %f, new err %f, imp %f" % \
 #            ( now.day, now.hour,now.minute,  prev_err,  new_err, imp)
 
-
         times = times_n
         if EM_itr == itr_limit: break
-  
+
     return init_err, init_rates, init_d, new_err, times_n, r_rates1, r_d1, EM_itr
 
 #--------------------------------------------------------------------------------------------#
@@ -665,7 +662,6 @@ def mhtn_correct_once(MC_times, table):
 
 #--------------------------------------------------------------------------------------------#
 def EM_MC_strt_pt(MC_times, table):
-
     itr_limit = 0
     MC_err, MC_rates, MC_d, PM_err, PM_times, PM_rates, PM_d, EM_itr = PMEM (MC_times, table, itr_limit)
 
@@ -799,6 +795,7 @@ def calc_error(table, times, rates, d):
 #--------------------------------------------------------------------------------------------#
 
 def output_results(run_id, sp_list, site_list, MC_times, MC_rates, MC_d, PM_times, PM_rates, PM_d):
+    print('Outputting Results')
     n_t = len(MC_times)
     n_s = len(MC_rates)
     if n_t != len(sp_list):
@@ -806,25 +803,21 @@ def output_results(run_id, sp_list, site_list, MC_times, MC_rates, MC_d, PM_time
     if n_s != len(site_list):
             ERR ("Invalid len %d"%(n_s))
 
-    ftimesrep = open("meth-"+run_id+"-times-MCvsPM.csv",'w')
-    ftimesrep.write("SampleID, MC-age, PM-age, ratio\n")
+    ftimesrep = open(run_id+"-times-MCvsPM.csv",'w')
+    ftimesrep.write("SampleID,MC-age,PM-age,ratio\n")
     time_srt = sorted([ [MC_times[j], PM_times[j]] for j in range(n_t)], key=lambda (k,v): (k))
-    print "\n".join(["%3.3f, %3.3f"%(time_srt[j][0],  time_srt[j][1]) for j in range((n_t))])
-#    exit(8)
-    
+
     for j in range (n_t):
-         ftimesrep.write("%s, %f, %f, %f\n"%(sp_list[j], MC_times[j], PM_times[j], MC_times[j]/PM_times[j]))
+         ftimesrep.write("%s,%f,%f,%f\n"%(sp_list[j], MC_times[j], PM_times[j], MC_times[j]/PM_times[j]))
 
     ftimesrep.close()
 
     
-    fratesrep = open("meth-"+run_id+"-rates-MCvsPM.csv",'w')
-    fratesrep.write("Site, MC-rate, PM-rate, rate ratio, MC-d, PM-d\n")
+    fratesrep = open(run_id+"-rates-MCvsPM.csv",'w')
+    fratesrep.write("Site,MC-rate,PM-rate,rate ratio,MC-d,PM-d\n")
     for j in range (n_s):
-        print "%s, %f, %f, %f, %f, %f, %f\n"% \
-           (site_list[j], MC_rates[j], PM_rates[j], MC_rates[j]/PM_rates[j],  MC_d[j], PM_d[j],  MC_d[j]/PM_d[j])
 
-        fratesrep.write("%s, %f, %f, %f, %f, %f, %f\n"% \
+        fratesrep.write("%s,%f,%f,%f,%f,%f,%f\n"% \
                         (site_list[j], MC_rates[j], PM_rates[j], MC_rates[j]/PM_rates[j],  MC_d[j], PM_d[j],  MC_d[j]/PM_d[j]))
 
     fratesrep.close()
