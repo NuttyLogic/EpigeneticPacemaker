@@ -129,4 +129,4 @@ plt.savefig('UPM_Example', dpi=300)
 plt.show()
 ```
 
-![png](output_17_0.png)
+![png](UPM_Example.png)
