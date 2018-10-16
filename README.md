@@ -129,4 +129,4 @@ plt.savefig('UPM_Example', dpi=300)
 plt.show()
 ```
 
-![png](UPM_Example.png)
+![png](https://raw.githubusercontent.com/NuttyLogic/EpigeneticClock_UniversalPaceMaker/master/ExampleRun/UPM_Example.png?token=AS1lVSeOU-HXSamhEwt3OCNOE4VeHZB6ks5bzmiowA%3D%3D)
