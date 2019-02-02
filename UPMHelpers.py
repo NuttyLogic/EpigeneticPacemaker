@@ -78,6 +78,7 @@ def PMEM(times=None, table=None, itr_limit=100, err_tolerance=.00001):
         sum2 = n_t * [0.]
         times_n = n_t * [0.]
 
+        # update time prediction
         for i in range(n_t):
             sum2[i] = sum([r_rates1[j] * table[j][i] for j in range(n_s)])
             times_n[i] = (sum2[i] - sum1) / sum_r_sq1
@@ -89,7 +90,6 @@ def PMEM(times=None, table=None, itr_limit=100, err_tolerance=.00001):
         assert(new_err < prev_err), f'new_err > prev_err: {new_err} vs {prev_err}'
 
         times = times_n
-
         results_dict = {'MC_err': init_err,
                         'MC_rates': init_rates,
                         'MC_d': init_d,
