@@ -5,23 +5,27 @@ from UPM.UPM_EM_TrainTest import MethylationEM_TrainTest
 
 class UPM_CV:
 
-    def __init__(self, methylation_array=None, upm_signal=None, cv_size=1, stratification_bins=None,
-                 sample_labels=None, methylation_sites=None, collect_stats=False):
-        self.methylation_array = methylation_array
+    def __init__(self, methylation_array=None, upm_signal=None, cv_size=1,
+                 sample_labels=None, methylation_sites=None, collect_stats=False, verbose=False):
+        self.methylation_array = np.asarray(methylation_array)
         self.upm_signal = upm_signal
         self.cv_size = cv_size
-        self.stratifcation_bins = stratification_bins
         self.sample_indicies = [x for x in range(len(methylation_array[0]))]
         self.sample_labels = sample_labels
         self.methylation_sites = methylation_sites
+        if not self.methylation_sites:
+            self.methylation_sites = [x for x in range(len(self.methylation_array[:, 0]))]
+            print(len(self.methylation_sites))
         self.collect_stats = collect_stats
+        self.tqdm_disable = True if not verbose else False
         self.upm_run_stats = {}
+        self.cv_rates = {}
         self.predicted_ages = {}
 
     def cv_upm_run(self):
         steps = int(len(self.sample_indicies) / self.cv_size)
         iter_count = 0
-        for step in tqdm(range(steps), 'Processing Samples'):
+        for step in tqdm(range(steps), desc='Processing Samples', disable=self.tqdm_disable):
             start = step * self.cv_size
             end = start + self.cv_size
 
@@ -48,8 +52,8 @@ class UPM_CV:
             upm.run()
             if self.collect_stats:
                 self.upm_run_stats[f'iter_{iter_count}'] = dict(test_samples=test_samples,
-                                                                pm_rates=upm.PM_model.UPM_EC_EM_results['PM_rates'],
-                                                                pm_d=upm.PM_model.UPM_EC_EM_results['PM_d'])
+                                                                PM_rates=upm.PM_model.UPM_EC_EM_results['PM_rates'],
+                                                                PM_d=upm.PM_model.UPM_EC_EM_results['PM_d'])
             for sample_index, sample_age in zip(test_samples, upm.test_ages['PM_times']):
                 self.predicted_ages[self.sample_labels[sample_index]] = sample_age
             iter_count += 1
@@ -62,6 +66,9 @@ class UPM_CV:
             pm_d.append(values['PM_d'])
         cv_pm = []
         cv_d = []
-        for site_pm, site_d in zip(*pm_rates, *pm_d):
+        for site_pm in zip(*pm_rates):
             cv_pm.append(np.mean(site_pm))
-            cv_d.append(np.mean(cv_d))
+        for site_d in zip(*pm_d):
+            cv_d.append(np.mean(site_d))
+        self.cv_rates['PM_rates'] = pm_rates
+        self.cv_rates['PM_d'] = pm_d
