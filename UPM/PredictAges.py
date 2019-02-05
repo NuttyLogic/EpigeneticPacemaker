@@ -1,5 +1,5 @@
 import numpy as np
-from UPMHelpers import calc_error
+from Utilities.UPMHelpers import calc_error
 
 
 def predict_age(table=None, r_rates=None, r_d=None):

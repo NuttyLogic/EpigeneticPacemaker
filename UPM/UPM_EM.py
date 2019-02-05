@@ -3,13 +3,13 @@
 
 import numpy as np
 import scipy.stats as stats
-from UPMHelpers import PMEM
+from Utilities.UPMHelpers import PMEM
 
 
 class MethylationEM:
 
     def __init__(self, methylation_table=None, sample_list=None, site_list=None, times=None, iter_limit=100,
-                 err_tolerance=0.0001, output_path=None):
+                 err_tolerance=0.0001):
         self.methylation_table = methylation_table
         self.sample_list = sample_list
         self.site_list = site_list
@@ -19,10 +19,6 @@ class MethylationEM:
         self.UPM_EC_EM_results = self.get_em_results(iter_limit=iter_limit, err_tolerance=err_tolerance)
         self.UPM_EC_EM_results['MC_times'] = list(self.times)
         self.run_statistics = self.get_run_statistics()
-        if output_path:
-            assert(isinstance(output_path, str))
-            self.output = output_path
-            self.output_results()
 
     def get_em_results(self, iter_limit=None, err_tolerance=None):
         results = PMEM(times=self.times,
