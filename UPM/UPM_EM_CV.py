@@ -55,7 +55,6 @@ class UPM_CV:
         for step in tqdm(range(steps), desc='Processing Folds', disable=self.tqdm_disable):
             start = step * self.cv_size
             end = start + self.cv_size
-            print(start, end)
 
             # select test indicies
             test_samples = self.sample_indicies[start:end]
