@@ -48,11 +48,14 @@ class UPM_CV:
         self.predicted_ages = {}
 
     def cv_upm_run(self):
-        steps = int(len(self.sample_indicies) / self.cv_size)
+        steps = int(len(self.sample_indicies) / self.cv_size) + 1
+        if not len(self.sample_indicies) % self.cv_size:
+            steps = int(len(self.sample_indicies) / self.cv_size)
         iter_count = 0
         for step in tqdm(range(steps), desc='Processing Folds', disable=self.tqdm_disable):
             start = step * self.cv_size
             end = start + self.cv_size
+            print(start, end)
 
             # select test indicies
             test_samples = self.sample_indicies[start:end]
