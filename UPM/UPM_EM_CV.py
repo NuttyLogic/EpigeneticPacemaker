@@ -4,9 +4,35 @@ from UPM.UPM_EM_TrainTest import MethylationEM_TrainTest
 
 
 class UPM_CV:
+    """Cross validated Universal Pacemaker model fitting. Returns age prediction for samples outside training
+    set and average site rates and starting methylation values
+    Keywords:
+        methylation_array (np.array / list): array of methylation values with rows as CpG sites and samples as columns,
+                                             can accept lists or np.array
+        upm_signal (np.array / list): UPM signal (ie. age) to fit model
+        cv_size (int): cross validation testing sample size
+        sample_labels (list of str): ordered sample label labels to return predicted UPM age
+        methylation_sites (np.array or list): if passed subset of methylation array rows are used to fit the model,
+                                              else all sites in the array are used
+        collect_stats (bool): default=True
+        verbose (bool): default=False
+    Attributes:
+        self.methylation_array (np.array / list): array of methylation values with rows as CpG sites
+                                                  and samples as columns, can accept lists or np.array
+        self.upm_signal (np.array / list): UPM signal (ie. age) to fit model
+        self.cv_size (int): cross validation testing sample size
+        self.sample_labels (list of str): ordered sample label labels to return predicted UPM age
+        self.methylation_sites (np.array or list): if passed subset of methylation array rows are used to fit the model,
+                                                   else all sites in the array are used
+        self.collect_stats (bool): default=True
+        self.tqdm_disable (bool): disable TQDM output
+        self.upm_run_stats (dict): pm_rates and pm_d for each CV fold
+        self.cv_rates (dict): average pm_rates and pm_d across CV folds
+        self.predicted_agas (dict): dict of predicted UPM signals
+        """
 
     def __init__(self, methylation_array=None, upm_signal=None, cv_size=1,
-                 sample_labels=None, methylation_sites=None, collect_stats=False, verbose=False):
+                 sample_labels=None, methylation_sites=None, collect_stats=True, verbose=False):
         self.methylation_array = np.asarray(methylation_array)
         self.upm_signal = upm_signal
         self.cv_size = cv_size
@@ -15,17 +41,16 @@ class UPM_CV:
         self.methylation_sites = methylation_sites
         if not self.methylation_sites:
             self.methylation_sites = [x for x in range(len(self.methylation_array[:, 0]))]
-            print(len(self.methylation_sites))
         self.collect_stats = collect_stats
         self.tqdm_disable = True if not verbose else False
         self.upm_run_stats = {}
-        self.cv_rates = {}
+        self.cv_results = {}
         self.predicted_ages = {}
 
     def cv_upm_run(self):
         steps = int(len(self.sample_indicies) / self.cv_size)
         iter_count = 0
-        for step in tqdm(range(steps), desc='Processing Samples', disable=self.tqdm_disable):
+        for step in tqdm(range(steps), desc='Processing Folds', disable=self.tqdm_disable):
             start = step * self.cv_size
             end = start + self.cv_size
 
@@ -70,5 +95,5 @@ class UPM_CV:
             cv_pm.append(np.mean(site_pm))
         for site_d in zip(*pm_d):
             cv_d.append(np.mean(site_d))
-        self.cv_rates['PM_rates'] = pm_rates
-        self.cv_rates['PM_d'] = pm_d
+        self.cv_results['PM_rates'] = pm_rates
+        self.cv_results['PM_d'] = pm_d
