@@ -97,5 +97,5 @@ class UPM_CV:
             cv_pm.append(np.mean(site_pm))
         for site_d in zip(*pm_d):
             cv_d.append(np.mean(site_d))
-        self.cv_results['PM_rates'] = pm_rates
-        self.cv_results['PM_d'] = pm_d
+        self.cv_results['PM_rates'] = cv_pm
+        self.cv_results['PM_d'] = cv_d
