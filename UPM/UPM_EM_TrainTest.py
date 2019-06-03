@@ -21,14 +21,14 @@ class MethylationEM_TrainTest:
         self.predict_test()
 
     def fit_model(self):
-        self.PM_model = MethylationEM(methylation_table=self.training_methylation,
+        self.PM_model = MethylationEM(methylation_array=self.training_methylation,
                                       sample_list=self.training_samples,
                                       site_list=self.cpg_site_labels,
-                                      times=self.training_ages,
+                                      states=self.training_ages,
                                       iter_limit=100,
-                                      err_tolerance=0.00001)
+                                      error_tolerance=0.00001)
 
     def predict_test(self):
-        self.test_ages = predict_age(table=self.testing_methylation,
+        self.test_ages = predict_age(meth_matrix=self.testing_methylation,
                                      r_rates=self.PM_model.UPM_EC_EM_results['PM_rates'],
                                      r_d=self.PM_model.UPM_EC_EM_results['PM_d'])

@@ -2,55 +2,32 @@
 import numpy as np
 
 
-def find_solution_direct(y=None, times=None, n_t=None, n_s=None):
+def find_solution_direct(meth_matrix, states):
+    sum_states = np.sum(states)
+    sum_states_sqr = np.sum(states ** 2)
 
-    sum_time = sum(times)
-    sum_time_sqr = sum([time ** 2 for time in times])
+    b1_1 = 1 / sum_states_sqr - sum_states ** 2 / (
+                (sum_states_sqr ** 2) * ((sum_states ** 2) / sum_states_sqr - len(states)))
+    b1_2 = sum_states / (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
 
-    time_matrix = []
+    top = states * b1_1 + b1_2
 
-    b1_1 = 1 / sum_time_sqr - sum_time ** 2 / ((sum_time_sqr ** 2) * ((sum_time ** 2) / sum_time_sqr - n_t))
-    b1_2 = sum_time / (sum_time_sqr * (sum_time ** 2 / sum_time_sqr - n_t))
+    b2_1 = (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
+    b2_2 = 1 / ((sum_states ** 2) / sum_states_sqr - len(states))
 
-    for i in range(n_s):
-        row0 = (n_s * n_t) * [0.]
-        for j in range(n_t):
-            row0[i * n_t + j] = times[j] * b1_1 + b1_2
-        time_matrix.append(row0)
+    bottom = states * sum_states / b2_1 - b2_2
 
-    b2_1 = (sum_time_sqr * (sum_time ** 2 / sum_time_sqr - n_t))
-    b2_2 = 1 / ((sum_time ** 2) / sum_time_sqr - n_t)
+    r_rates = np.dot(meth_matrix, top)
 
-    for i in range(n_s):
-        row0 = (n_s * n_t) * [0.]
-        for j in range(n_t):
-            row0[i * n_t + j] = sum_time * times[j] / b2_1 - b2_2
-        time_matrix.append(row0)
+    r_d = np.dot(meth_matrix, bottom)
 
-    r_rates = []
-    for i in range(n_s):
-        temp = 0.
-        for j in range(n_t):
-            temp += time_matrix[i][i * n_t + j] * y[i * n_t + j]
-        r_rates.append(temp)
-
-    r_d = []
-    for i in range(n_s):
-        temp = 0.
-        for j in range(n_t):
-            temp += time_matrix[n_s + i][i * n_t + j] * y[i * n_t + j]
-        r_d.append(temp)
     return r_rates, r_d
 
 
-def PMEM(times=None, table=None, itr_limit=100, err_tolerance=.00001):
-
-    times = list(times)
-    n_s = len(table)
-    n_t = len(table[0])
-    y = [table[i][j] for i in range(n_s) for j in range(n_t)]
-    imp = 1
-    EM_itr = 0
+def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
+    states = np.asarray(states)
+    meth_matrix = np.asarray(meth_matrix)
+    EM_iter = 0
 
     init_err = None
     init_rates = None
@@ -58,65 +35,58 @@ def PMEM(times=None, table=None, itr_limit=100, err_tolerance=.00001):
 
     while True:
 
-        EM_itr += 1
+        r_rates, r_d = find_solution_direct(meth_matrix=meth_matrix, states=states)
 
-        r_rates1, r_d1 = find_solution_direct(y=y, times=times, n_t=n_t, n_s=n_s)
+        prev_err = calc_error(meth_matrix=meth_matrix, states=states, rates=r_rates, d=r_d)
 
-        prev_err = calc_error(table=table, times=times, rates=r_rates1, d=r_d1, n_s=n_s, n_t=n_t)
-
-        if EM_itr == 1:
+        if not EM_iter:
             init_err = prev_err
-            init_rates = r_rates1
-            init_d = r_d1
+            init_rates = r_rates
+            init_d = r_d
 
-        assert (len(r_rates1) == n_s), f'len(r_rates1), {r_rates1} != number of sites, {n_s})'
-        assert (len(r_d1) == n_s), f'len(r_d1), {r_d1} != number of sites, {n_s})'
+        EM_iter += 1
 
-        sum_r_sq1 = sum([x ** 2 for x in r_rates1])
-        sum1 = sum([r_rates1[j] * r_d1[j] for j in range(n_s)])
+        assert (len(r_rates) == meth_matrix.shape[0]), f'Not a rate for every site, {r_rates} ' \
+            f'!= number of sites, {meth_matrix.shape[0]})'
+        assert (len(r_d) == meth_matrix.shape[0]), f'Not a d for every site, {r_d} ' \
+            f'!= number of sites, {meth_matrix.shape[0]})'
 
-        sum2 = n_t * [0.]
-        times_n = n_t * [0.]
+        sum_r_sq1 = np.sum(r_rates ** 2)
+        sum1 = np.sum(r_rates * r_d)
 
-        # update time prediction
-        for i in range(n_t):
-            sum2[i] = sum([r_rates1[j] * table[j][i] for j in range(n_s)])
-            times_n[i] = (sum2[i] - sum1) / sum_r_sq1
+        sum2 = np.dot(r_rates, meth_matrix)
+        states_updated = (sum2 - sum1) / sum_r_sq1
 
-        new_err = calc_error(table=table, times=times_n, rates=r_rates1, d=r_d1, n_s=n_s, n_t=n_t)
+        new_err = calc_error(meth_matrix, states=states_updated, rates=r_rates, d=r_d)
 
         imp = prev_err - new_err
 
-        assert(new_err < prev_err), f'new_err > prev_err: {new_err} vs {prev_err}'
+        assert (new_err < prev_err), f'new_err > prev_err: {new_err} vs {prev_err}'
 
-        times = times_n
+        states = states_updated
         results_dict = {'MC_err': init_err,
                         'MC_rates': init_rates,
                         'MC_d': init_d,
                         'PM_err': new_err,
-                        'PM_times': times_n,
-                        'PM_rates': r_rates1,
-                        'PM_d': r_d1,
-                        'EM_iter': EM_itr}
+                        'PM_times': states,
+                        'PM_rates': r_rates,
+                        'PM_d': r_d,
+                        'EM_iter': EM_iter}
 
-        if EM_itr == itr_limit:
+        if EM_iter == iter_limit:
             break
-        elif imp < err_tolerance:
+        elif imp < error_tolerance:
             break
 
     return results_dict
 
 
-def calc_error(table=None, times=None, rates=None, d=None, n_s=None, n_t=None):
-    tot_err = 0.
-
-    for i in range(n_s):
-        for j in range(n_t):
-            t_j = times[j]
-            err = (table[i][j] - t_j * rates[i] - d[i]) ** 2
-            tot_err += err
-
-    return np.sqrt(tot_err / (n_s * n_t))
+def calc_error(meth_matrix=None, states=None, rates=None, d=None):
+    total_error = 0.0
+    number_sites, number_states = meth_matrix.shape
+    for count, site in enumerate(meth_matrix):
+        total_error += sum((site - states * rates[count] - d[count]) ** 2)
+    return np.sqrt(total_error / (number_sites * number_states))
 
 
 def import_upm_table(upm_file=None):

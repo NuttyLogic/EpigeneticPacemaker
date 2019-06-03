@@ -7,23 +7,22 @@ from Utilities.UPMHelpers import PMEM
 
 class MethylationEM:
 
-    def __init__(self, methylation_table=None, sample_list=None, site_list=None, times=None, iter_limit=100,
-                 err_tolerance=0.0001):
-        self.methylation_table = methylation_table
+    def __init__(self, methylation_array=None, sample_list=None, site_list=None, states=None, iter_limit=100,
+                 error_tolerance=0.0001):
+        self.meth_matrix = np.asarray(methylation_array)
+        self.number_sites, self.number_times = self.meth_matrix.shape
         self.sample_list = sample_list
         self.site_list = site_list
-        self.times = times
-        self.number_sites = len(methylation_table)
-        self.number_times = len(times)
-        self.UPM_EC_EM_results = self.get_em_results(iter_limit=iter_limit, err_tolerance=err_tolerance)
-        self.UPM_EC_EM_results['MC_times'] = list(self.times)
+        self.states = states
+        self.UPM_EC_EM_results = self.get_em_results(iter_limit=iter_limit, error_tolerance=error_tolerance)
+        self.UPM_EC_EM_results['MC_times'] = list(self.states)
         self.run_statistics = self.get_run_statistics()
 
-    def get_em_results(self, iter_limit=None, err_tolerance=None):
-        results = PMEM(times=self.times,
-                       table=self.methylation_table,
-                       itr_limit=iter_limit,
-                       err_tolerance=err_tolerance)
+    def get_em_results(self, iter_limit=None, error_tolerance=None):
+        results = PMEM(states=self.states,
+                       meth_matrix=self.meth_matrix,
+                       iter_limit=iter_limit,
+                       error_tolerance=error_tolerance)
         return results
 
     def get_run_statistics(self):

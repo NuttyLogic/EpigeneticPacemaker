@@ -13,13 +13,12 @@ control_ages = f'{test_data_folder}/test_data/meth-tab-n100-m200.txt.CEM-times-M
 test_samples, test_ages, test_meth_sites, test_meth_table = import_upm_table(upm_file=test_input_file_path)
 
 
-test_em = MethylationEM(methylation_table=test_meth_table,
+test_em = MethylationEM(methylation_array=test_meth_table,
                         sample_list=test_samples,
                         site_list=test_meth_sites,
-                        times=test_ages,
+                        states=test_ages,
                         iter_limit=100,
-                        err_tolerance=0.00001,
-                        output_path=f'{test_data_folder}/test_data/test_output')
+                        error_tolerance=0.00001)
 
 control_age_df = pd.read_csv(control_ages, sep=',', index_col=0)
 control_rate_df = pd.read_csv(control_rates, sep=',', index_col=0)
