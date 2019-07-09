@@ -27,7 +27,7 @@ def find_solution_direct(meth_matrix, states):
 def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
     states = np.asarray(states)
     meth_matrix = np.asarray(meth_matrix)
-    EM_iter = 0
+    em_iter: int = 0
 
     init_err = None
     init_rates = None
@@ -39,12 +39,12 @@ def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
 
         prev_err = calc_error(meth_matrix=meth_matrix, states=states, rates=r_rates, d=r_d)
 
-        if not EM_iter:
+        if not em_iter:
             init_err = prev_err
             init_rates = r_rates
             init_d = r_d
 
-        EM_iter += 1
+        em_iter += 1
 
         assert (len(r_rates) == meth_matrix.shape[0]), f'Not a rate for every site, {r_rates} ' \
             f'!= number of sites, {meth_matrix.shape[0]})'
@@ -71,9 +71,9 @@ def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
                         'PM_times': states,
                         'PM_rates': r_rates,
                         'PM_d': r_d,
-                        'EM_iter': EM_iter}
+                        'EM_iter': em_iter}
 
-        if EM_iter == iter_limit:
+        if em_iter == iter_limit:
             break
         elif imp < error_tolerance:
             break
@@ -83,7 +83,10 @@ def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
 
 def calc_error(meth_matrix=None, states=None, rates=None, d=None):
     total_error = 0.0
-    number_sites, number_states = meth_matrix.shape
+    try:
+        number_sites, number_states = meth_matrix.shape
+    except ValueError:
+        number_sites, number_states = len(meth_matrix), 1
     for count, site in enumerate(meth_matrix):
         total_error += sum((site - states * rates[count] - d[count]) ** 2)
     return np.sqrt(total_error / (number_sites * number_states))
