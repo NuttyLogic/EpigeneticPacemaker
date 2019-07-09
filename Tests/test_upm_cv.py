@@ -6,7 +6,7 @@ from Utilities.UPMHelpers import import_upm_table
 from UPM.UPM_EM_CV import UPM_CV
 from UPM.PredictAges import predict_age
 
-test_data_folder = dir_path = os.path.dirname(os.path.realpath(__file__))
+test_data_folder = os.path.dirname(os.path.realpath(__file__))
 test_input_file_path = f'{test_data_folder}/test_data/meth-tab-n100-m200.txt'
 control_rates = f'{test_data_folder}/test_data/meth-tab-n100-m200.txt.CEM-rates-MCvsPM.csv'
 control_ages = f'{test_data_folder}/test_data/meth-tab-n100-m200.txt.CEM-times-MCvsPM.csv'
