@@ -83,10 +83,7 @@ def PMEM(states=None, meth_matrix=None, iter_limit=100, error_tolerance=.00001):
 
 def calc_error(meth_matrix=None, states=None, rates=None, d=None):
     total_error = 0.0
-    try:
-        number_sites, number_states = meth_matrix.shape
-    except ValueError:
-        number_sites, number_states = len(meth_matrix), 1
+    number_sites, number_states = meth_matrix.shape
     for count, site in enumerate(meth_matrix):
         total_error += sum((site - states * rates[count] - d[count]) ** 2)
     return np.sqrt(total_error / (number_sites * number_states))
