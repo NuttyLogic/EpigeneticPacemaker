@@ -1,0 +1,22 @@
+from setuptools import setup
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+
+setup(name='EpigeneticPacemaker',
+      version='0.0.1',
+      description='Epigentic State Modeling Utility ',
+      long_description=long_description,
+      long_description_content_type="text/markdown",
+      url='https://github.com/NuttyLogic/BSBolt',
+      project_urls={'Documentation': 'https://bsbolt.readthedocs.io/en/latest/'},
+      author='Colin P. Farrell',
+      author_email='colinpfarrell@gmail.com',
+      packages=['EpigeneticPacemaker'],
+      requires=['scipy', 'numpy', 'tqdm'],
+      install_requires=['numpy>=1.16.3', 'tqdm>=4.31.1', 'scipy>=1.3.0'],
+      python_requires='>=3.6',
+      test_suite='tests',
+      zip_safe=True
+      )
