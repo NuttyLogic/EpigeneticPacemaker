@@ -14,9 +14,10 @@ epigenetic trait associations directly without transformation of the phenotype o
 pip3 install EpigeneticPacemaker
 ``` 
 
-## Documentation
+## Tutorial
 
-[epigeneticpacemaker.readthedocs.io](https://epigeneticpacemaker.readthedocs.io/en/latest/)
+Please see the tutorial section for a use case example.
+
 
 ## Citations 
 
@@ -25,3 +26,6 @@ pip3 install EpigeneticPacemaker
 3. [Snir, S. & Pellegrini, M. An epigenetic pacemaker is detected via a fast conditional expectation maximization algorithm. 10, 695–706 (2018).](https://doi.org/10.1371/journal.pcbi.1005183)
 4. [Snir, S., vonHoldt, B. M. & Pellegrini, M. A Statistical Framework to Identify Deviation from Time Linearity in Epigenetic Aging. PLoS Comput. Biol. 12, 1–15 (2016).](https://doi.org/10.2217/epi-2017-0130)
 5. [Snir, S., Farrell, C. & Pellegrini, M. Human epigenetic ageing is logarithmic with time across the entire lifespan. Epigenetics (2019). doi:10.1080/15592294.2019.1623634](https://doi.org/10.1080/15592294.2019.1623634)
+
+
+

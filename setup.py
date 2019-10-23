@@ -6,11 +6,11 @@ with open("README.md", "r") as fh:
 
 setup(name='EpigeneticPacemaker',
       version='0.0.1',
-      description='Epigentic State Modeling Utility',
+      description='Epigenetic State Modeling Utility',
       long_description=long_description,
       long_description_content_type="text/markdown",
       url='https://github.com/NuttyLogic/EpigeneticPacemaker',
-      project_urls={'Documentation': ''},
+      project_urls={'Documentation': 'https://epigeneticpacemaker.readthedocs.io'},
       author='Colin P. Farrell, Sagi Snir',
       author_email='colinpfarrell@gmail.com',
       packages=['EpigeneticPacemaker'],
