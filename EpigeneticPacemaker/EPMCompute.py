@@ -77,7 +77,7 @@ def EPM_expectation_maximization(states=None, meth_array=None, iter_limit=100, e
                     'EPM_error': new_err,
                     'EPM_rates': r_rates,
                     'EPM_intercepts': r_d,
-                    'EM_iter': em_iter}
+                    'EPM_iter': em_iter}
 
     return model_params
 
