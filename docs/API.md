@@ -1,4 +1,4 @@
-## EpigeneticPacemaker
+# EpigeneticPacemaker
 
 <h3>Parameters</h3>
 ---
@@ -34,7 +34,7 @@ tolerance threshold the model will stop fitting
 > Fit an EPM model with an m x n methylation array and n methylation states, where m is the number of methylation sites 
 and n is the number of samples. The meth_array and states should be passed an numpy arrays or an assertion error will be thrown. 
 
-**predict(meth_array: numpy.array) -> predicted epigentic states: numpy.array**
+**predict(meth_array: numpy.array) -> predicted epigenetic states: numpy.array**
 > Predict n epigenetic states given an m x n methylation array
 
 **score(meth_array: numpy.array, states: numpy.array) -> Pearson R: tuple(significance, R value)**
@@ -43,7 +43,7 @@ not be linearly dependent on input values.
 
 ***
 
-## EpigeneticPacemakerCV
+# EpigeneticPacemakerCV
 
 <h3>Parameters</h3>
 ---

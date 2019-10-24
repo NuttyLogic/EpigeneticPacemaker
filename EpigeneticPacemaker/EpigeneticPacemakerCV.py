@@ -1,36 +1,12 @@
+import random
 import numpy as np
 from tqdm import tqdm
-import random
 from EpigeneticPacemaker.EpigeneticPacemaker import EpigeneticPacemaker
 from EpigeneticPacemaker.EPMBase import EPMBase
 
 
 class EpigeneticPacemakerCV(EPMBase):
-    """Cross validated Universal Pacemaker model fitting. Returns age prediction for samples outside training
-    set and average site rates and starting methylation values
-    Keywords:
-        methylation_array (np.array / list): array of methylation values with rows as CpG sites and samples as columns,
-                                             can accept lists or np.array
-        upm_signal (np.array / list): UPM signal (ie. age) to fit model
-        cv_size (int): cross validation testing sample size
-        sample_labels (list of str): ordered sample label labels to return predicted UPM age
-        methylation_sites (np.array or list): if passed subset of methylation array rows are used to fit the model,
-                                              else all sites in the array are used
-        collect_stats (bool): default=True
-        verbose (bool): default=False
-    Attributes:
-        self.methylation_array (np.array / list): array of methylation values with rows as CpG sites
-                                                  and samples as columns, can accept lists or np.array
-        self.upm_signal (np.array / list): UPM signal (ie. age) to fit model
-        self.cv_size (int): cross validation testing sample size
-        self.sample_labels (list of str): ordered sample label labels to return predicted UPM age
-        self.methylation_sites (np.array or list): if passed subset of methylation array rows are used to fit the model,
-                                                   else all sites in the array are used
-        self.collect_stats (bool): default=True
-        self.tqdm_disable (bool): disable TQDM output
-        self.upm_run_stats (dict): pm_rates and pm_d for each CV fold
-        self.cv_rates (dict): average pm_rates and pm_d across CV folds
-        self.predicted_agas (dict): dict of predicted UPM signals
+    """
         """
 
     def __init__(self, verbose: bool = False,
@@ -67,6 +43,23 @@ class EpigeneticPacemakerCV(EPMBase):
             fold_count += 1
         self.set_cv_model()
 
+    def _fit_epm(self, test_indices, meth_array, states, fold_count):
+        train_indices = [index for index in range(len(states)) if index not in test_indices]
+        train_array = meth_array[:, train_indices]
+        train_states = states[train_indices]
+
+        test_array = meth_array[:, test_indices]
+
+        self._epm.fit(meth_array=train_array, states=train_states)
+        test_states = self._epm.predict(meth_array=test_array)
+        for index, state in zip(test_indices, test_states):
+            self.predicted_states[index] = state
+
+        self.models[f'iter_{fold_count}'] = dict(test_indices=test_indices,
+                                                 EPM_rates=np.copy(self._epm.EPM['EPM_rates']),
+                                                 EPM_intercepts=np.copy(self._epm.EPM['EPM_intercepts']))
+        fold_count += 1
+
     def get_cv_folds(self, sample_number):
         if self.cv_folds < 0:
             self.cv_folds = sample_number
@@ -97,4 +90,3 @@ class EpigeneticPacemakerCV(EPMBase):
         for index in range(len(self.predicted_states)):
             predicted_states.append(self.predicted_states[index])
         self.predicted_states = np.array(predicted_states)
-
