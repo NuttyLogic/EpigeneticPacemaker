@@ -1,4 +1,4 @@
-## EpigeneticPacemaker
+# EpigeneticPacemaker
 
 <h3>Parameters</h3>
 ---
@@ -43,7 +43,7 @@ not be linearly dependent on input values.
 
 ***
 
-## EpigeneticPacemakerCV
+# EpigeneticPacemakerCV
 
 <h3>Parameters</h3>
 ---

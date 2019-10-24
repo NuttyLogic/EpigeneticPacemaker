@@ -1,5 +1,6 @@
-<h2> Epigenetic Pacemaker: A fast conditional expectation maximization algorithm for modeling epigenetic state </h2>
+<h1> Epigenetic Pacemaker: A fast conditional expectation maximization algorithm for modeling epigenetic state </h1>
 
+## About
 DNA methylation is widely used to model physiological phenotypes, such as 
 aging[<sup>1</sup>](https://doi.org/10.1186/gb-2013-14-10-r115) and type II diabetes[<sup>2</sup>](https://doi.org/10.1093/hmg/ddy093). 
 The epigenetic pacemaker, **EPM**, is an implementation of the a fast conditional expectation maximization algorithm for 
@@ -7,11 +8,15 @@ modeling epigenetic states associated with a phenotype of interest [<sup>3</sup>
 [<sup>4</sup>](https://doi.org/10.1371/journal.pcbi.1005183) as an extension of the Universal Pacemaker (UPM) to model epigenetic aging. Additionally, the EPM can model non-linear 
 epigenetic trait associations directly without transformation of the phenotype of interest[<sup>5</sup>](https://doi.org/10.1080/15592294.2019.1623634).
 
-<h2> Installation </h2>
+## Installation
 
 ```shell
 pip3 install EpigeneticPacemaker
 ``` 
+
+## [Tutorial](/tutorial)
+
+Please see the tutorial section for usage examples. 
 
 <h2> Citations </h2> 
 
