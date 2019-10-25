@@ -110,7 +110,7 @@ test_predict = epm.predict(test_methylation_values[training_sites,:])
 # plot the model results 
 plot_known_predicted_ages(test_ages, test_predict, 'EpigenticPacemaker')
 ```
-![](img/EpigenticPacemaker.png)
+![](img/EpigeneticPacemaker.png)
 ## Fitting Cross Validated EPM
 
 The cross validated version of the EPM is fit using the same general process as the EPM following initialization with 
