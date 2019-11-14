@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='EpigeneticPacemaker',
-      version='0.0.2',
+      version='0.0.3',
       description='Epigenetic State Modeling Utility',
       long_description=long_description,
       long_description_content_type="text/markdown",

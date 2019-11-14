@@ -1,65 +1,49 @@
-
+from typing import Dict, Tuple
 import numpy as np
 
 
-def find_solution_direct(meth_array, states):
-    sum_states = np.sum(states)
-    sum_states_sqr = np.sum(states ** 2)
-
-    b1_1 = 1 / sum_states_sqr - sum_states ** 2 / (
-                (sum_states_sqr ** 2) * ((sum_states ** 2) / sum_states_sqr - len(states)))
-    b1_2 = sum_states / (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
-
-    top = states * b1_1 + b1_2
-
-    b2_1 = (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
-    b2_2 = 1 / ((sum_states ** 2) / sum_states_sqr - len(states))
-
-    bottom = states * sum_states / b2_1 - b2_2
-
-    r_rates = np.dot(meth_array, top)
-
-    r_d = np.dot(meth_array, bottom)
-
-    return r_rates, r_d
+def find_solution_direct(meth_array: np.ndarray, states: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Fit linear model at each site of interest"""
+    rates: np.ndarray = (np.sum((meth_array - np.mean(meth_array, axis=0)) * (states - np.mean(states)), axis=1)
+                         / np.sum((states - np.mean(states))**2))
+    intercepts: np.ndarray = np.mean(meth_array, axis=1) - rates * np.mean(states)
+    return rates, intercepts
 
 
-def EPM_expectation_maximization(states=None, meth_array=None, iter_limit=100, error_tolerance=.00001):
+def update_states(meth_array: np.ndarray = None,
+                  rates: np.ndarray = None, intercepts: np.ndarray = None) -> np.ndarray:
+    """Update state given by S = (m_hat_{i,j} - m_0) / r_i. For numerical simplicity actually calculate
+    S = (r_i*\\hat{m}_{i,j} - m^{0}r_i)/(r_i^2))"""
+    assert (rates.shape[0] == meth_array.shape[0]), f'Not a rate for every site, {rates.shape[0]} ' \
+                                                    f'!= number of sites, {meth_array.shape[0]})'
+    assert (intercepts.shape[0] == meth_array.shape[0]), f'Not an intercept for every site, {intercepts.shape[0]} ' \
+                                                         f'!= number of sites, {meth_array.shape[0]})'
+    return (np.dot(rates, meth_array) - np.sum(rates * intercepts)) / np.sum(rates ** 2)
+
+
+def epm_expectation_maximization(meth_array: np.ndarray = None, states: np.ndarray = None,
+                                 iter_limit: int = 100, error_tolerance: float = .00001) -> Dict[str, np.ndarray]:
     states = np.copy(np.asarray(states))
-    meth_array = np.asarray(meth_array)
-    em_iter: int = 0
+    em_iter = 0
 
-    init_err = None
-    init_rates = None
-    init_d = None
-    new_err = None
+    init_err, init_rates, init_intercepts = None, None, None
 
     while True:
 
-        r_rates, r_d = find_solution_direct(meth_array=meth_array, states=states)
+        rates, intercepts = find_solution_direct(meth_array=meth_array, states=states)
 
-        prev_err = calc_error(meth_array=meth_array, states=states, rates=r_rates, d=r_d)
+        prev_err: float = calc_error(meth_array=meth_array, states=states, rates=rates, intercepts=intercepts)
 
         if not em_iter:
-            init_err = prev_err
-            init_rates = r_rates
-            init_d = r_d
+            init_err, init_rates, init_intercepts = prev_err, rates, intercepts
 
         em_iter += 1
 
-        assert (len(r_rates) == meth_array.shape[0]), f'Not a rate for every site, {r_rates} ' \
-            f'!= number of sites, {meth_array.shape[0]})'
-        assert (len(r_d) == meth_array.shape[0]), f'Not a d for every site, {r_d} ' \
-            f'!= number of sites, {meth_array.shape[0]})'
+        states_updated = update_states(meth_array=meth_array, rates=rates, intercepts=intercepts)
 
-        sum_r_sq1 = np.sum(r_rates ** 2)
-        sum1 = np.sum(r_rates * r_d)
+        new_err = calc_error(meth_array, states=states_updated, rates=rates, intercepts=intercepts)
 
-        sum2 = np.dot(r_rates, meth_array)
-        states_updated = (sum2 - sum1) / sum_r_sq1
-
-        new_err = calc_error(meth_array, states=states_updated, rates=r_rates, d=r_d)
-
+        # calculate model improvement
         imp = prev_err - new_err
 
         assert (new_err < prev_err), f'new_err > prev_err: {new_err} vs {prev_err}'
@@ -73,39 +57,30 @@ def EPM_expectation_maximization(states=None, meth_array=None, iter_limit=100, e
 
     model_params = {'MC_error': init_err,
                     'MC_rates': init_rates,
-                    'MC_intercepts': init_d,
+                    'MC_intercepts': init_intercepts,
                     'EPM_error': new_err,
-                    'EPM_rates': r_rates,
-                    'EPM_intercepts': r_d,
+                    'EPM_rates': rates,
+                    'EPM_intercepts': intercepts,
                     'EPM_iter': em_iter}
 
     return model_params
 
 
-def calc_error(meth_array=None, states=None, rates=None, d=None):
+def calc_error(meth_array: np.array = None, states: np.array = None,
+               rates: np.array = None, intercepts: np.array = None) -> float:
     total_error = 0.0
     number_sites, number_states = meth_array.shape
     for count, site in enumerate(meth_array):
-        total_error += sum((site - states * rates[count] - d[count]) ** 2)
+        total_error += sum((site - states * rates[count] - intercepts[count]) ** 2)
     return np.sqrt(total_error / (number_sites * number_states))
 
 
-def predict_epm_states(meth_array=None, r_rates=None, r_d=None):
-    assert (len(r_rates) == meth_array.shape[0]), f'Not a rate for every site, {r_rates} ' \
-        f'!= number of sites, {meth_array.shape[0]})'
-    assert (len(r_d) == meth_array.shape[0]), f'Not a d for every site, {r_d} ' \
-        f'!= number of sites, {meth_array.shape[0]})'
+def predict_epm_states(meth_array: np.ndarray = None,
+                       rates: np.ndarray = None, intercepts: np.ndarray = None) -> Dict[str, np.ndarray]:
 
-    sum_r_sq1 = np.sum(r_rates ** 2)
-    sum1 = np.sum(r_rates * r_d)
+    states_updated = update_states(meth_array=meth_array, rates=rates, intercepts=intercepts)
 
-    sum2 = np.dot(r_rates, meth_array)
-    states_updated = (sum2 - sum1) / sum_r_sq1
+    new_err = calc_error(meth_array=meth_array, states=states_updated, rates=rates, intercepts=intercepts)
 
-    new_err = calc_error(meth_array=meth_array, states=states_updated, rates=r_rates, d=r_d)
-
-    results_dict = {'EPM_error': new_err,
-                    'EPM_states': states_updated}
-
-    return results_dict
+    return {'EPM_error': new_err, 'EPM_states': states_updated}
 

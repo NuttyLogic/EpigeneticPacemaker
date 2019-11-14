@@ -1,4 +1,5 @@
 import random
+from typing import List
 import numpy as np
 from tqdm import tqdm
 from EpigeneticPacemaker.EpigeneticPacemaker import EpigeneticPacemaker
@@ -20,7 +21,7 @@ class EpigeneticPacemakerCV(EPMBase):
         self.models = {}
         self.predicted_states = {}
 
-    def fit(self, meth_array, states):
+    def fit(self, meth_array: np.ndarray, states: np.ndarray):
         assert isinstance(meth_array, (np.ndarray, np.generic)), 'Pass numpy array'
         assert isinstance(states, (np.ndarray, np.generic)), 'Pass numpy array'
         cv_groups = self.get_cv_folds(len(states))
@@ -43,24 +44,7 @@ class EpigeneticPacemakerCV(EPMBase):
             fold_count += 1
         self.set_cv_model()
 
-    def _fit_epm(self, test_indices, meth_array, states, fold_count):
-        train_indices = [index for index in range(len(states)) if index not in test_indices]
-        train_array = meth_array[:, train_indices]
-        train_states = states[train_indices]
-
-        test_array = meth_array[:, test_indices]
-
-        self._epm.fit(meth_array=train_array, states=train_states)
-        test_states = self._epm.predict(meth_array=test_array)
-        for index, state in zip(test_indices, test_states):
-            self.predicted_states[index] = state
-
-        self.models[f'iter_{fold_count}'] = dict(test_indices=test_indices,
-                                                 EPM_rates=np.copy(self._epm.EPM['EPM_rates']),
-                                                 EPM_intercepts=np.copy(self._epm.EPM['EPM_intercepts']))
-        fold_count += 1
-
-    def get_cv_folds(self, sample_number):
+    def get_cv_folds(self, sample_number: int) -> List[List[int]]:
         if self.cv_folds < 0:
             self.cv_folds = sample_number
         sample_indices = [count for count in range(sample_number)]
@@ -83,8 +67,8 @@ class EpigeneticPacemakerCV(EPMBase):
         for fold, model in self.models.items():
             rates.append(model['EPM_rates'])
             intercepts.append(model['EPM_intercepts'])
-        cv_rates = np.array([np.mean(rate) for rate in zip(*rates)])
-        cv_intercepts = np.array([np.mean(intercept) for intercept in zip(*intercepts)])
+        cv_rates: np.ndarray = np.array([np.mean(rate) for rate in zip(*rates)])
+        cv_intercepts: np.ndarray = np.array([np.mean(intercept) for intercept in zip(*intercepts)])
         self.EPM = dict(EPM_rates=cv_rates, EPM_intercepts=cv_intercepts)
         predicted_states = []
         for index in range(len(self.predicted_states)):
