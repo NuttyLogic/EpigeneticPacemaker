@@ -3,9 +3,9 @@
 ## About
 DNA methylation is widely used to model physiological phenotypes, such as 
 aging[<sup>1</sup>](https://doi.org/10.1186/gb-2013-14-10-r115) and type II diabetes[<sup>2</sup>](https://doi.org/10.1093/hmg/ddy093). 
-The epigenetic pacemaker, **EPM**, is an implementation of the a fast conditional expectation maximization algorithm for 
-modeling epigenetic states associated with a phenotype of interest [<sup>3</sup>](https://doi.org/10.2217/epi-2017-0130) The EPM was first introduced by Snir et al. 
-[<sup>4</sup>](https://doi.org/10.1371/journal.pcbi.1005183) as an extension of the Universal Pacemaker (UPM) to model epigenetic aging. Additionally, the EPM can model non-linear 
+The epigenetic pacemaker, **EPM**, is an implementation of a fast conditional expectation maximization algorithm used to 
+model epigenetic states associated with a phenotype of interest [<sup>3</sup>](https://doi.org/10.2217/epi-2017-0130) The EPM was first introduced by Snir et al. 
+[<sup>4</sup>](https://doi.org/10.1371/journal.pcbi.1005183) as an extension of the Universal Pacemaker (UPM). The EPM can model non-linear 
 epigenetic trait associations directly without transformation of the phenotype of interest[<sup>5</sup>](https://doi.org/10.1080/15592294.2019.1623634).
 
 ## Installation

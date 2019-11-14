@@ -1,7 +1,8 @@
+from typing import Dict, Union
 import numpy as np
 import scipy.stats as stats
 from EpigeneticPacemaker.EPMBase import EPMBase
-from EpigeneticPacemaker.EPMCompute import EPM_expectation_maximization
+from EpigeneticPacemaker.EPMCompute import epm_expectation_maximization
 
 
 class EpigeneticPacemaker(EPMBase):
@@ -11,16 +12,16 @@ class EpigeneticPacemaker(EPMBase):
         self.iter_limit = iter_limit
         self.error_tolerance = error_tolerance
 
-    def fit(self, meth_array: np.array = None, states: np.array = None):
+    def fit(self, meth_array: np.ndarray = None, states: np.ndarray = None):
         assert isinstance(meth_array, (np.ndarray, np.generic)), 'Pass numpy array'
         assert isinstance(states, (np.ndarray, np.generic)), 'Pass numpy array'
-        self.EPM = EPM_expectation_maximization(meth_array=meth_array,
+        self.EPM = epm_expectation_maximization(meth_array=meth_array,
                                                 states=states,
                                                 iter_limit=self.iter_limit,
                                                 error_tolerance=self.error_tolerance)
         self.EPM.update(self.get_epm_statistics(meth_array))
 
-    def get_epm_statistics(self, meth_array):
+    def get_epm_statistics(self, meth_array: np.ndarray) -> Union[Dict[str, float], None]:
         number_sites, number_samples = meth_array.shape
         if not self.EPM:
             print('Fit model before calculating model statistics')
