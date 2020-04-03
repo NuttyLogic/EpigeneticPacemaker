@@ -37,7 +37,6 @@ class EpigeneticPacemakerCV(EPMBase):
             test_states = self._epm.predict(meth_array=test_array)
             for index, state in zip(test_indices, test_states):
                 self.predicted_states[index] = state
-
             self.models[f'iter_{fold_count}'] = dict(test_indices=test_indices,
                                                      EPM_rates=np.copy(self._epm.EPM['EPM_rates']),
                                                      EPM_intercepts=np.copy(self._epm.EPM['EPM_intercepts']))

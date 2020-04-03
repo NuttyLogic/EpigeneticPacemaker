@@ -88,7 +88,7 @@ def plot_known_predicted_ages(known_ages, predicted_ages, label=None):
     # fit trend line
     popt, pcov = optimize.curve_fit(func, [1 + x for x in known_ages], predicted_ages)
     # get r squared
-    rsquared = r2([1 + x for x in known_ages], func([1 + x for x in known_ages], *popt))
+    rsquared = r2(predicted_ages, func([1 + x for x in known_ages], *popt))
     # format plot label
     plot_label = f'$f(x)={popt[0]:.2f}x^{{1/2}} {popt[2]:.2f}, R^{{2}}={rsquared:.2f}$'
     # initialize plt plot
