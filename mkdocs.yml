@@ -3,9 +3,20 @@ site_name: Epigenetic Pacemaker
 repo_url: https://github.com/NuttyLogic/EpigeneticPacemaker
 repo_name: 'GitHub'
 
+markdown_extensions:
+  - codehilite
+  - pymdownx.arithmatex
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
+
+
 theme:
-  name: 'readthedocs'
+  name: 'material'
+  logo: img/lightning-bolt.png
+  favicon: img/lightning-bolt.pn
 nav:
     - Home: index.md
+    - EPM Algorithm: algorithm.md
+    - EPM Tutorial: epm_tutorial.md
     - API: API.md
-    - Tutorial: tutorial.md
