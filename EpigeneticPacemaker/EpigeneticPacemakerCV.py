@@ -9,56 +9,47 @@ class EpigeneticPacemakerCV(EPMBase):
     """
         """
 
-    def __init__(self, verbose: bool = False,
-                 cv_folds: int = 3, randomize_order: bool = False, iter_limit: int = 100,
-                 error_tolerance: float = 0.00001):
+    def __init__(self,
+                 cv_folds: int = 3, randomize_sample_order: bool = False,
+                 iter_limit=100, n_jobs=1,
+                 error_tolerance=0.001, learning_rate=0.01,
+                 scale_X=True
+                 ):
         EPMBase.__init__(self)
-        self.tqdm_disable = True if not verbose else False
         self.cv_folds = cv_folds
-        self._epm = EpigeneticPacemaker(iter_limit=iter_limit, error_tolerance=error_tolerance)
-        self.randomize = randomize_order
-        self.models = {}
-        self.predicted_states = {}
+        self.randomize = randomize_sample_order
+        self.iter_limit = iter_limit
+        self.n_jobs = n_jobs
+        self.error_tolerance = error_tolerance
+        self.learning_rate = learning_rate
+        self.scale_X = scale_X
+        self.predictions = {}
 
-    def fit(self, meth_array, states):
-        assert isinstance(meth_array, (np.ndarray, np.generic)), 'Pass numpy array'
-        assert isinstance(states, (np.ndarray, np.generic)), 'Pass numpy array'
-        cv_groups = self.get_cv_folds(len(states))
+    def fit(self, X, Y, sample_weights=None, verbose=False):
+        cv_groups = self.get_cv_folds(X.shape[0])
         fold_count = 0
-        for test_indices in tqdm(cv_groups, desc='Processing Folds', disable=self.tqdm_disable):
-            train_indices = [index for index in range(len(states)) if index not in test_indices]
-            train_array = meth_array[:, train_indices]
-            train_states = states[train_indices]
+        coefs, intercepts, errors = np.zeros((Y.shape[0], X.shape[1])), np.zeros(Y.shape[0]), 0.0
+        for test_indices in cv_groups:
+            train_indices = [index for index in range(X.shape[0]) if index not in test_indices]
+            train_Y = Y[:, train_indices]
+            train_X = X[train_indices, :]
 
-            test_array = meth_array[:, test_indices]
+            test_Y = Y[:, test_indices]
 
-            self._epm.fit(meth_array=train_array, states=train_states)
-            test_states = self._epm.predict(meth_array=test_array)
+            self.fit_epm(train_X, train_Y, sample_weights=sample_weights, verbose=verbose)
+            test_states = self.predict(test_Y)
             for index, state in zip(test_indices, test_states):
-                self.predicted_states[index] = state
+                self.predictions[index] = state
 
-            self.models[f'iter_{fold_count}'] = dict(test_indices=test_indices,
-                                                     EPM_rates=np.copy(self._epm.EPM['EPM_rates']),
-                                                     EPM_intercepts=np.copy(self._epm.EPM['EPM_intercepts']))
+            # weight the contribution of each fold by the number of samples in the fold
+            coefs += self._coefs * len(test_indices)
+            intercepts += self._intercepts * len(test_indices)
+            errors += self._error * len(test_indices)
             fold_count += 1
-        self.set_cv_model()
-
-    def _fit_epm(self, test_indices, meth_array, states, fold_count):
-        train_indices = [index for index in range(len(states)) if index not in test_indices]
-        train_array = meth_array[:, train_indices]
-        train_states = states[train_indices]
-
-        test_array = meth_array[:, test_indices]
-
-        self._epm.fit(meth_array=train_array, states=train_states)
-        test_states = self._epm.predict(meth_array=test_array)
-        for index, state in zip(test_indices, test_states):
-            self.predicted_states[index] = state
-
-        self.models[f'iter_{fold_count}'] = dict(test_indices=test_indices,
-                                                 EPM_rates=np.copy(self._epm.EPM['EPM_rates']),
-                                                 EPM_intercepts=np.copy(self._epm.EPM['EPM_intercepts']))
-        fold_count += 1
+        self._coefs = coefs / Y.shape[0]
+        self._intercepts = intercepts / Y.shape[0]
+        self._error = errors / Y.shape[0]
+        self.unpack_out_of_fold_predictions()
 
     def get_cv_folds(self, sample_number):
         if self.cv_folds < 0:
@@ -78,15 +69,5 @@ class EpigeneticPacemakerCV(EPMBase):
                 test_indices.append(sample_indices[fold * step_size: fold * step_size + step_size])
         return test_indices
 
-    def set_cv_model(self):
-        rates, intercepts = [], []
-        for fold, model in self.models.items():
-            rates.append(model['EPM_rates'])
-            intercepts.append(model['EPM_intercepts'])
-        cv_rates = np.array([np.mean(rate) for rate in zip(*rates)])
-        cv_intercepts = np.array([np.mean(intercept) for intercept in zip(*intercepts)])
-        self.EPM = dict(EPM_rates=cv_rates, EPM_intercepts=cv_intercepts)
-        predicted_states = []
-        for index in range(len(self.predicted_states)):
-            predicted_states.append(self.predicted_states[index])
-        self.predicted_states = np.array(predicted_states)
+    def unpack_out_of_fold_predictions(self):
+        self.predictions = np.array([self.predictions[index] for index in range(len(self.predictions))])

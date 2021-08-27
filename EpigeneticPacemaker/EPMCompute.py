@@ -1,111 +1,74 @@
-
+from typing import Tuple
+import joblib
 import numpy as np
 
 
-def find_solution_direct(meth_array, states):
-    sum_states = np.sum(states)
-    sum_states_sqr = np.sum(states ** 2)
+def lstsq(X: np.ndarray, y: np.ndarray, rid: int = 0,
+          fit_intercept: bool = True, weights: np.ndarray = None):
+    """Solve $$Ax=B$$, by computing $$x$$, minimize $$||B-Ax||$$ using np.linalg.lsqrt,
+    intercept and weight calculation implemented using a scaled back implementation of scikit-learn LinearRegression
 
-    b1_1 = 1 / sum_states_sqr - sum_states ** 2 / (
-                (sum_states_sqr ** 2) * ((sum_states ** 2) / sum_states_sqr - len(states)))
-    b1_2 = sum_states / (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
-
-    top = states * b1_1 + b1_2
-
-    b2_1 = (sum_states_sqr * (sum_states ** 2 / sum_states_sqr - len(states)))
-    b2_2 = 1 / ((sum_states ** 2) / sum_states_sqr - len(states))
-
-    bottom = states * sum_states / b2_1 - b2_2
-
-    r_rates = np.dot(meth_array, top)
-
-    r_d = np.dot(meth_array, bottom)
-
-    return r_rates, r_d
-
-
-def EPM_expectation_maximization(states=None, meth_array=None, iter_limit=100, error_tolerance=.00001):
-    states = np.copy(np.asarray(states))
-    meth_array = np.asarray(meth_array)
-    em_iter: int = 0
-
-    init_err = None
-    init_rates = None
-    init_d = None
-    new_err = None
-
-    while True:
-
-        r_rates, r_d = find_solution_direct(meth_array=meth_array, states=states)
-
-        prev_err = calc_error(meth_array=meth_array, states=states, rates=r_rates, d=r_d)
-
-        if not em_iter:
-            init_err = prev_err
-            init_rates = r_rates
-            init_d = r_d
-
-        em_iter += 1
-
-        assert (len(r_rates) == meth_array.shape[0]), f'Not a rate for every site, {r_rates} ' \
-            f'!= number of sites, {meth_array.shape[0]})'
-        assert (len(r_d) == meth_array.shape[0]), f'Not a d for every site, {r_d} ' \
-            f'!= number of sites, {meth_array.shape[0]})'
-
-        sum_r_sq1 = np.sum(r_rates ** 2)
-        sum1 = np.sum(r_rates * r_d)
-
-        sum2 = np.dot(r_rates, meth_array)
-        states_updated = (sum2 - sum1) / sum_r_sq1
-
-        new_err = calc_error(meth_array, states=states_updated, rates=r_rates, d=r_d)
-
-        imp = prev_err - new_err
-
-        assert (new_err < prev_err), f'new_err > prev_err: {new_err} vs {prev_err}'
-
-        states = states_updated
-
-        if em_iter == iter_limit:
-            break
-        elif imp < error_tolerance:
-            break
-
-    model_params = {'MC_error': init_err,
-                    'MC_rates': init_rates,
-                    'MC_intercepts': init_d,
-                    'EPM_error': new_err,
-                    'EPM_rates': r_rates,
-                    'EPM_intercepts': r_d,
-                    'EPM_iter': em_iter}
-
-    return model_params
+    Params:
+        * *X: (np.ndarray)*: array of m samples and n features
+        * *y: (np.ndarray)*: vector of m target values
+        * *rid: (int)*: regression ID to ensure results matrix constructed correctly if multi-threaded
+        * *weights: (np.ndarray)*: weights for m samples, not currently implemented
+    Returns:
+        * *rid (int)*: regression ID
+        * *_coefs (np.ndarray)*: least squares solution
+        * *_res (np.ndarray)*: sums of squared residuals
+        * *_rank (int)*: rank of matrix A
+        *_sin_vals (np.ndarray)*: singular values of matrix A
+        * *_intercept (float)*: regression intercept
+    """
+    #ToDo: support weighted sample fitting
+    X_fit, y_fit = np.copy(X, order='k'), np.copy(y, order='k')
+    X_offset, y_offset = 0.0, 0.0
+    if fit_intercept or weights is not None:
+        X_offset, y_offset = np.average(X_fit, axis=0, weights=weights), np.average(y_fit, axis=0, weights=weights)
+        X_fit -= X_offset
+        y_fit -= y_offset
+    _coefs, _res, _rank, _sin_vals = np.linalg.lstsq(X_fit, y_fit, rcond=None)
+    _intercept = 0.0 if not fit_intercept else y_offset - np.dot(X_offset, _coefs.T)
+    return rid, _coefs, _res, _rank, _sin_vals, _intercept
 
 
-def calc_error(meth_array=None, states=None, rates=None, d=None):
-    total_error = 0.0
-    number_sites, number_states = meth_array.shape
-    for count, site in enumerate(meth_array):
-        total_error += sum((site - states * rates[count] - d[count]) ** 2)
-    return np.sqrt(total_error / (number_sites * number_states))
+def construct_lstsq_solutions_matrix(system_solutions):
+    """Unpack system of regression models
+    Params:
+        * *systems_solutions (Tuple)*: tuple of lstsq results
+    Returns:
+        * *coefs (np.ndarray)*: array of regression coefficients
+        * *intercepts (np.ndarray)*: vector of regression intercepts
+        * *sum_res (float)*: sum of all regression model sum of squared residuals
+    """
+    # construct least square solution matrix
+    coefs = np.zeros((len(system_solutions), len(system_solutions[0][1][0])))
+    # intercepts
+    intercepts = np.zeros(len(system_solutions))
+    # construct residuals matrix
+    res = np.zeros((len(system_solutions), len(system_solutions[0][1][0])))
+    # construct using label to ensure matrix order
+    for sol in system_solutions:
+        coefs[sol[0]] = sol[1].reshape(1,-1)
+        intercepts[sol[0]] = sol[5]
+        res[sol[0]] = sol[2]
+    return coefs, intercepts, sum(res)
 
 
-def predict_epm_states(meth_array=None, r_rates=None, r_d=None):
-    assert (len(r_rates) == meth_array.shape[0]), f'Not a rate for every site, {r_rates} ' \
-        f'!= number of sites, {meth_array.shape[0]})'
-    assert (len(r_d) == meth_array.shape[0]), f'Not a d for every site, {r_d} ' \
-        f'!= number of sites, {meth_array.shape[0]})'
+def solve_regression_system(X: np.ndarray, Y: np.ndarray, n_jobs: int = 1, fit_intercept: bool = True):
+    solutions = joblib.Parallel(n_jobs=n_jobs)(
+                joblib.delayed(lstsq)(*[X, Y[row], rid, fit_intercept]) for rid, row in enumerate(range(Y.shape[0])))
+    return construct_lstsq_solutions_matrix(solutions)
 
-    sum_r_sq1 = np.sum(r_rates ** 2)
-    sum1 = np.sum(r_rates * r_d)
 
-    sum2 = np.dot(r_rates, meth_array)
-    states_updated = (sum2 - sum1) / sum_r_sq1
+def one_epm_step(X: np.ndarray, Y: np.ndarray, n_jobs=1):
+    state_site_sys = solve_regression_system(X, Y, n_jobs=n_jobs, fit_intercept=True)
+    _, step_states = lstsq(state_site_sys[0], Y - state_site_sys[1].reshape(-1, 1), fit_intercept=False)
+    return state_site_sys, step_states
 
-    new_err = calc_error(meth_array=meth_array, states=states_updated, rates=r_rates, d=r_d)
 
-    results_dict = {'EPM_error': new_err,
-                    'EPM_states': states_updated}
-
-    return results_dict
-
+def predict_epm_states(epm_coefs, epm_intercepts, Y) -> np.ndarray:
+    # predict epm results with trained system
+    res = lstsq(epm_coefs[0], Y - epm_intercepts.reshape(-1, 1), fit_intercept=False)
+    return res[1].T
