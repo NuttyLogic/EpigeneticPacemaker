@@ -57,6 +57,10 @@ def construct_lstsq_solutions_matrix(system_solutions):
 
 
 def solve_regression_system(X: np.ndarray, Y: np.ndarray, n_jobs: int = 1, fit_intercept: bool = True):
+    """Fit linear least squares regression
+     with every row of Y $$n \times m$$ matrix
+
+    """
     solutions = joblib.Parallel(n_jobs=n_jobs)(
                 joblib.delayed(lstsq)(*[X, Y[row], rid, fit_intercept]) for rid, row in enumerate(range(Y.shape[0])))
     return construct_lstsq_solutions_matrix(solutions)
