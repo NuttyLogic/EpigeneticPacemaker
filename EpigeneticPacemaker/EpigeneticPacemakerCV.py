@@ -1,7 +1,5 @@
 import random
 import numpy as np
-from tqdm import tqdm
-from EpigeneticPacemaker.EpigeneticPacemaker import EpigeneticPacemaker
 from EpigeneticPacemaker.EPMBase import EPMBase
 
 
@@ -29,8 +27,10 @@ class EpigeneticPacemakerCV(EPMBase):
         cv_groups = self.get_cv_folds(X.shape[0])
         fold_count = 0
         coefs, intercepts, errors = np.zeros((Y.shape[0], X.shape[1])), np.zeros(Y.shape[0]), 0.0
+        training_sample_count = 0
         for test_indices in cv_groups:
             train_indices = [index for index in range(X.shape[0]) if index not in test_indices]
+            training_sample_count += len(train_indices)
             train_Y = Y[:, train_indices]
             train_X = X[train_indices, :]
 
@@ -42,13 +42,13 @@ class EpigeneticPacemakerCV(EPMBase):
                 self.predictions[index] = state
 
             # weight the contribution of each fold by the number of samples in the fold
-            coefs += self._coefs * len(test_indices)
-            intercepts += self._intercepts * len(test_indices)
-            errors += self._error * len(test_indices)
+            coefs += self._coefs * len(train_indices)
+            intercepts += self._intercepts * len(train_indices)
+            errors += self._error * len(train_indices)
             fold_count += 1
-        self._coefs = coefs / Y.shape[0]
-        self._intercepts = intercepts / Y.shape[0]
-        self._error = errors / Y.shape[0]
+        self._coefs = coefs / training_sample_count
+        self._intercepts = intercepts / training_sample_count
+        self._error = errors / training_sample_count
         self.unpack_out_of_fold_predictions()
 
     def get_cv_folds(self, sample_number):
@@ -71,3 +71,4 @@ class EpigeneticPacemakerCV(EPMBase):
 
     def unpack_out_of_fold_predictions(self):
         self.predictions = np.array([self.predictions[index] for index in range(len(self.predictions))])
+
