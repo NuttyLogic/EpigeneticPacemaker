@@ -29,7 +29,8 @@ class EPMBase:
 
     def fit_epm(self, X, Y, sample_weights=None, verbose=False):
         fit_X, fit_Y = np.copy(X, order='k'), np.copy(Y, order='k')
-        if len(fit_X.shape[0])
+        if len(fit_X.shape) == 1:
+            fit_X = fit_X.reshape(-1, 1)
         error = None
         scaler = EPMScaler()
         scaler.fit(fit_X)
