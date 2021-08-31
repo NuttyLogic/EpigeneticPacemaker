@@ -1,10 +1,7 @@
 import os
 import unittest
 import numpy as np
-from tqdm import tqdm
-from EpigeneticPacemaker import EpigeneticPacemaker
-from EpigeneticPacemaker import EpigeneticPacemakerCV
-
+from EpigeneticPacemaker.Helpers import pearson_correlation
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,33 +14,9 @@ site_info = np.genfromtxt(f'{data_dir}/test_data/val_site_info.tsv', delimiter='
 ages, expected_states = phenos[:, 0], phenos[:, 1]
 m_nots, rates = site_info[:, 0], site_info[:, 1]
 
-# fit epm
 
 
-epm_cv = EpigeneticPacemakerCV(cv_folds=4, learning_rate=0.1,
-                               scale_X=True, verbose=True,
-                               cv_predictions=True)
-epm_cv.fit(ages, meth)
 
-epm_cv_ran = EpigeneticPacemakerCV(cv_folds=4, learning_rate=0.1,
-                                   scale_X=True, verbose=True,
-                                   cv_predictions=True,
-                                   randomize_sample_order=True)
-epm_cv_ran.fit(ages, meth)
-
-fold_predictions = []
-for step in tqdm(range(4), desc='EPM Validation Folds'):
-
-    # set fold test / train samples
-    test_indices = [count + 250 * step for count in range(250)]
-    train_indices = [count for count in range(1000) if count not in test_indices]
-
-    # fit epm
-    epm = EpigeneticPacemaker(learning_rate=0.1, scale_X=True, verbose=False)
-    epm.fit(ages[train_indices], meth[:, train_indices])
-    fold_predictions.append(epm.predict(meth[:, test_indices]))
-
-fold_predictions = np.array(fold_predictions).flatten()
 
 
 class TestEPMCV(unittest.TestCase):

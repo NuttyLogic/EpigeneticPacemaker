@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tqdm import tqdm
 from EpigeneticPacemaker.EPMBase import EPMBase
 
 
@@ -11,7 +12,7 @@ class EpigeneticPacemakerCV(EPMBase):
                  cv_folds: int = 3, randomize_sample_order: bool = False,
                  iter_limit=100, n_jobs=1,
                  error_tolerance=0.001, learning_rate=0.01,
-                 scale_X=True
+                 scale_X=True, verbose=False, cv_predictions=False
                  ):
         EPMBase.__init__(self)
         self.cv_folds = cv_folds
@@ -21,25 +22,30 @@ class EpigeneticPacemakerCV(EPMBase):
         self.error_tolerance = error_tolerance
         self.learning_rate = learning_rate
         self.scale_X = scale_X
+        self.verbose = verbose
+        self.cv_predictions = cv_predictions
         self.predictions = {}
 
-    def fit(self, X, Y, sample_weights=None, verbose=False):
+    def fit(self, X, Y, sample_weights=None):
         cv_groups = self.get_cv_folds(X.shape[0])
         fold_count = 0
-        coefs, intercepts, errors = np.zeros((Y.shape[0], X.shape[1])), np.zeros(Y.shape[0]), 0.0
+        # reshape X if one dimensional
+        X_fit = X if len(X.shape) > 1 else X.reshape(-1, 1)
+        coefs, intercepts, errors = np.zeros((Y.shape[0], X_fit.shape[1])), np.zeros(Y.shape[0]), 0.0
         training_sample_count = 0
-        for test_indices in cv_groups:
+        for test_indices in tqdm(cv_groups, disable=True if not self.verbose else False, desc='CV Folds'):
             train_indices = [index for index in range(X.shape[0]) if index not in test_indices]
             training_sample_count += len(train_indices)
             train_Y = Y[:, train_indices]
-            train_X = X[train_indices, :]
+            train_X = X_fit[train_indices, :]
 
             test_Y = Y[:, test_indices]
 
-            self.fit_epm(train_X, train_Y, sample_weights=sample_weights, verbose=verbose)
+            self.fit_epm(train_X, train_Y, sample_weights=sample_weights)
             test_states = self.predict(test_Y)
-            for index, state in zip(test_indices, test_states):
-                self.predictions[index] = state
+            if self.cv_predictions:
+                for index, state in zip(test_indices, test_states):
+                    self.predictions[index] = state
 
             # weight the contribution of each fold by the number of samples in the fold
             coefs += self._coefs * len(train_indices)
@@ -70,5 +76,6 @@ class EpigeneticPacemakerCV(EPMBase):
         return test_indices
 
     def unpack_out_of_fold_predictions(self):
-        self.predictions = np.array([self.predictions[index] for index in range(len(self.predictions))])
+        if self.cv_predictions:
+            self.predictions = np.array([self.predictions[index] for index in range(len(self.predictions))])
 

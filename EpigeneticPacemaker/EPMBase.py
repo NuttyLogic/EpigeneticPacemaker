@@ -9,7 +9,7 @@ class EPMBase:
 
     def __init__(self, iter_limit=100, n_jobs=1,
                  error_tolerance=0.001, learning_rate=0.01,
-                 scale_X=True):
+                 scale_X=True, verbose=False):
         self._coefs = None
         self._intercepts = None
         self._error = None
@@ -18,6 +18,7 @@ class EPMBase:
         self.error_tolerance = error_tolerance
         self.learning_rate = learning_rate
         self.scale_X = scale_X
+        self.verbose = verbose
 
     def predict(self, Y: np.ndarray):
         if self._coefs is None:
